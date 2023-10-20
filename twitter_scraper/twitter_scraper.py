@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from tqdm import tqdm
-import re, time
+import re, time, datetime   
 
 class Twitter_scraper(Scraper):
 
@@ -56,4 +56,30 @@ class Twitter_scraper(Scraper):
             self.__append_tweets_data(tweets_data, self.driver)
 
         return tweets_data
+    
+    def get_trends(self):
+        
+        trends_data = []
+
+        body = self.driver.find_element(By.TAG_NAME, "body")
+        list = body.find_elements(By.CSS_SELECTOR, '[data-testid="trend"]')
+
+        for elem in list:
+            # take the first div into the list
+            div = elem.find_elements(By.TAG_NAME, 'div')[0]
+            # take the text into the second div
+            text = div.find_elements(By.TAG_NAME, 'div')[4].text
+            # take the number of posts into the third div
+            number_of_posts = super()._convert_to_int(div.find_elements(By.TAG_NAME, 'div')[5].text.split(' ')[0])
+            # take the current data and save it as a datetime object in a json file
+            current_date = datetime.datetime.now()
+
+            print(text, number_of_posts)
+
+            if number_of_posts > 0:
+                trends_data.append({"trending_topic": text, "number_of_posts": number_of_posts, "date": current_date.strftime("%d/%m/%Y %H:%M:%S")})
+            else:
+                trends_data.append({"trending_topic": text, "date": current_date.strftime("%d/%m/%Y %H:%M:%S")})
+
+        return trends_data
     
