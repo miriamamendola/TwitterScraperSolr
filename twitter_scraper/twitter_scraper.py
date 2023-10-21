@@ -51,7 +51,7 @@ class Twitter_scraper(Scraper):
         for _ in tqdm(range(num_scrolls)):
 
             print("Scrolling down...")
-            
+
             for _ in range(scroll_iterations):
                 try:
                     elem = self.driver.find_element(By.TAG_NAME, "body")
@@ -144,7 +144,7 @@ class Twitter_scraper(Scraper):
             except:
                 pass
             try:
-                user_data["joined_date"] = items_div.find_element(By.CSS_SELECTOR, '[data-testid="UserJoinedDate"]').text
+                user_data["joined_date"] = items_div.find_element(By.CSS_SELECTOR, '[data-testid="UserJoinDate"]').text
             except:
                 pass 
             try:
