@@ -15,7 +15,7 @@ class Twitter_scraper(Scraper):
         except:
             return
         
-        print('+',len(twitter_elm),' new tweets!\n')
+        i = 0
 
         for post in twitter_elm:
             
@@ -34,7 +34,13 @@ class Twitter_scraper(Scraper):
             like_div = post.find_element(By.CSS_SELECTOR, '[data-testid="like"]')
             share_div = post.find_element(By.CSS_SELECTOR, '[data-testid="app-text-transition-container"]')
 
-            tweets_data.append({"username": username, "name": name, "tweet": text, "replies": super()._convert_to_int(reply_div.text), "retweets": super()._convert_to_int(retweet_div.text), "likes": super()._convert_to_int(like_div.text), "shares": super()._convert_to_int(share_div.text)})
+            new_record = {"username": username, "name": name, "tweet": text, "replies": super()._convert_to_int(reply_div.text), "retweets": super()._convert_to_int(retweet_div.text), "likes": super()._convert_to_int(like_div.text), "shares": super()._convert_to_int(share_div.text)}
+
+            if new_record not in tweets_data:
+                tweets_data.append(new_record)
+                i += 1
+
+        print("+{} new tweets".format(i))
 
     def get_tweets(self, num_scrolls, scroll_iterations, driver_wait_time, scroll_wait_time):
 

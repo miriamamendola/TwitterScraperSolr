@@ -9,7 +9,7 @@ if __name__ == "__main__":
     scraper.get_page("https://twitter.com", login_time)
 
     num_scrolls = 10
-    scroll_iterations = 50
+    scroll_iterations = 10
     driver_wait_time = 10
     scroll_wait_time = 1
 
