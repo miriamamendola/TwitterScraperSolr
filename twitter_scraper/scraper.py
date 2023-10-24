@@ -1,11 +1,12 @@
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 import re, time
 
 class Scraper:
 
     def __init__(self):
-        ChromeDriverManager().install()
+
         self.driver = webdriver.Chrome()
 
     def get_page(self, url, login_time = 0):

@@ -8,12 +8,13 @@ if __name__ == "__main__":
     login_time = 60
     scraper.get_page("https://twitter.com", login_time)
 
-    num_scrolls = 10
+    num_scrolls = 1
     scroll_iterations = 10
     driver_wait_time = 10
     scroll_wait_time = 1
 
     tweets_data = scraper.get_tweets(num_scrolls, scroll_iterations, driver_wait_time, scroll_wait_time)
+    scraper.get_comments(tweets_data, scroll_wait_time, driver_wait_time)
 
     # save the tweets_data.json file
     with open("database/tweets_data.json", "w") as f:
