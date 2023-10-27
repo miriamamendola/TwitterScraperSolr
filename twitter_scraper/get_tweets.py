@@ -1,23 +1,25 @@
 from twitter_scraper import Twitter_scraper
 import json
+import sys
 
 if __name__ == "__main__":
 
-    scraper = Twitter_scraper()
+    # total arguments
+    if (len(sys.argv) < 2):
+        print("No arguments passed")
+        print("Usage: python get_tweets.py <username> <password>")
+        exit(0)
 
-    login_time = 60
-    scraper.get_page("https://twitter.com", login_time)
+    n = len(sys.argv)
+    scraper = Twitter_scraper(sys.argv[1], sys.argv[2])
+    num_tweets = 1
 
-    num_scrolls = 1
-    scroll_iterations = 10
-    driver_wait_time = 10
-    scroll_wait_time = 1
-
-    tweets_data = scraper.get_tweets(num_scrolls, scroll_iterations, driver_wait_time, scroll_wait_time)
-    scraper.get_comments(tweets_data, scroll_wait_time, driver_wait_time)
+    tweets_data = scraper.search('covid', num_tweets)
 
     # save the tweets_data.json file
     with open("database/tweets_data.json", "w") as f:
         json.dump(tweets_data, f, indent=4)
 
     scraper.close()
+
+    

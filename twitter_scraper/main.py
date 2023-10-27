@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     scraper = Twitter_scraper()
 
-    login_time = 60
+    login_time = 30
     scraper.get_page("https://twitter.com", login_time)
 
     num_scrolls = 60
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     trends_collection = db["Trends"]
     #trends_data = scraper.get_trends()
-    trends_data = [{"_id": ObjectId(), "trending_topic": "covid19", "url": "https://twitter.com/search?q=covid19&src=typed_query", "date": datetime.datetime.now(tz=datetime.timezone.utc), "number_of_posts": 1000, "location":"Italia"}]
+    trends_data = [{"trending_topic": "covid", "url": "https://twitter.com/search?q=%23covid&src=trend_click&vertical=trends", "date": datetime.datetime.now(), "number_of_posts": 1000, "location": "Worldwide"}]
     trends_collection.insert_many(trends_data)
 
     tweets_collection = db["Tweets"]
