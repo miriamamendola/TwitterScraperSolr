@@ -24,7 +24,6 @@ class Twitter_scraper(Scraper):
                 EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and .//span[text()="Next"]]'))
             )
             next_button.click()
-            # wait
             time.sleep(2)
         except:
             raise Exception("Error: next button")
@@ -54,7 +53,45 @@ class Twitter_scraper(Scraper):
         self.driver_wait_time = 1
         self.scroll_wait_time = 1
         self.scroll_iterations = 1
+        self.max_comments = 100
+        self.comments = True
         self.__login() 
+
+    def get_driver_wait_time(self):
+        return self.driver_wait_time
+    
+    def get_scroll_wait_time(self):
+        return self.scroll_wait_time
+    
+    def get_scroll_iterations(self):
+        return self.scroll_iterations
+    
+    def get_max_comments(self):
+        return self.max_comments
+
+    def set_driver_wait_time(self, driver_wait_time):
+        self.driver_wait_time = driver_wait_time
+
+    def set_scroll_wait_time(self, scroll_wait_time):
+        self.scroll_wait_time = scroll_wait_time
+
+    def set_scroll_iterations(self, scroll_iterations):
+        self.scroll_iterations = scroll_iterations
+
+    def set_max_comments(self, max_comments):
+        self.max_comments = max_comments
+    
+    def set_username(self, username):
+        self.username = username
+
+    def set_password(self, password):
+        self.password = password
+
+    def is_comments(self):
+        return self.comments
+    
+    def set_comments(self, comments):
+        self.comments = comments
 
     def __append_tweets_data(self, tweets_data, driver):
 
@@ -69,9 +106,8 @@ class Twitter_scraper(Scraper):
 
             try:
                 tweet_elem = post.find_elements(By.TAG_NAME, 'a')
-
+                tweet_url = ""
                 for elem in tweet_elem:
-                    tweet_url = ""
                     if 'status' in elem.get_attribute('href'):
                         tweet_permalink_url = elem.get_attribute('href')
                         tweet_url_parts = tweet_permalink_url.split('/status/')
@@ -80,7 +116,7 @@ class Twitter_scraper(Scraper):
                             tweet_url = f'https://twitter.com/username/status/{tweet_id}'
                         break
             except:
-                tweet_url = ""
+                pass
 
             try:
             
@@ -99,7 +135,7 @@ class Twitter_scraper(Scraper):
                 like_div = post.find_element(By.CSS_SELECTOR, '[data-testid="like"]')
                 share_div = post.find_element(By.CSS_SELECTOR, '[data-testid="app-text-transition-container"]')
 
-                new_record = {"username": username, "name": name, "tweet": text, "replies": super()._convert_to_int(reply_div.text), "retweets": super()._convert_to_int(retweet_div.text), "likes": super()._convert_to_int(like_div.text), "shares": super()._convert_to_int(share_div.text), "url": tweet_url}
+                new_record = {"username": username, "name": name, "text": text, "replies": super()._convert_to_int(reply_div.text), "retweets": super()._convert_to_int(retweet_div.text), "likes": super()._convert_to_int(like_div.text), "shares": super()._convert_to_int(share_div.text), "url": tweet_url}
 
                 if new_record not in tweets_data:
                     tweets_data.append(new_record)
@@ -119,7 +155,6 @@ class Twitter_scraper(Scraper):
 
         self.__append_tweets_data(tweets_data, self.driver)
 
-        # use tqdm to show the progress bar
         while(len(tweets_data) < num_tweets):
 
             for _ in range(self.scroll_iterations):
@@ -144,7 +179,10 @@ class Twitter_scraper(Scraper):
     def search(self, query, num_tweets):
 
         self.get_page("https://twitter.com/search?q={}&src=typed_query".format(query))
-        return self.get_tweets(num_tweets)
+        tweets = self.get_tweets(num_tweets)
+        if self.comments:
+            self.get_comments(tweets)
+        return tweets
     
     def get_trends(self):
         
@@ -167,8 +205,6 @@ class Twitter_scraper(Scraper):
             # take the url of the post, search the a tag and take the href attribute containinh the 'hashtag' string
             trend_name = text.replace('#', '%23')
             url = "https://twitter.com/search?q={}&src=trend_click&vertical=trends".format(trend_name)
-            
-            print(text, number_of_posts)
 
             if number_of_posts > 0:
                 trends_data.append({"trending_topic": text, "number_of_posts": number_of_posts, "date":  datetime.datetime.now(tz=datetime.timezone.utc), "url": url})
@@ -242,6 +278,7 @@ class Twitter_scraper(Scraper):
     
     def get_comments(self, tweets):
         
+        print("Getting comments...")
         # for each tweet in the list of dicts, take the url and the number of replies
         for tweet in tweets:
 
@@ -253,6 +290,7 @@ class Twitter_scraper(Scraper):
                 # open the url of the tweet
                 self.driver.get(url)
                 # wait for the comments to load
+                time.sleep(2)
                 wait = WebDriverWait(self.driver, self.driver_wait_time)
                 wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '[data-testid="appLoader"]')))
 
@@ -266,24 +304,45 @@ class Twitter_scraper(Scraper):
 
                 self.__append_tweets_data(comments, self.driver)
 
-                # use tqdm to show the progress bar
-                for _ in tqdm(range(min(replies, 10))):
+                i = 0
+                
+                with tqdm(total=min(replies, self.max_comments)) as pbar:
 
-                    for _ in range(10):
+                    while (i < min(replies, self.max_comments)):
                         try:
                             elem = self.driver.find_element(By.TAG_NAME, "body")
                         except:
-                            return 
+                            pass
+
                         elem.send_keys(Keys.PAGE_DOWN)
-                        time.sleep(self.scroll_wait_time)
 
-                    # Wait for new tweets to load
-                    wait = WebDriverWait(self.driver, self.driver_wait_time)
-                    wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '[data-testid="appLoader"]')))
+                        # Wait for new tweets to load
+                        wait = WebDriverWait(self.driver, self.driver_wait_time)
+                        wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '[data-testid="appLoader"]')))
 
-                    self.__append_tweets_data(comments, self.driver)
+                        try:
+                            showMoreButton = WebDriverWait(self.driver, self.driver_wait_time).until(
+                                EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and .//span[text()="Show more replies"]]'))
+                            )
+                            showMoreButton.click()
+                            time.sleep(2)
+                        except:
+                            pass
 
-                tweet["comments"] = comments
-                tweet["replies"] = len(comments)
+                        try:
+                            showMoreButton = WebDriverWait(self.driver, self.driver_wait_time).until(
+                                EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and .//span[text()="Show"]]'))
+                            )
+                            showMoreButton.click()
+                            time.sleep(2)
+                        except:
+                            pass
 
-        
+                        self.__append_tweets_data(comments, self.driver)
+
+                        pbar.update(len(comments)-i)  # Update the progress bar by the number of comments
+                        i = len(comments)
+
+                if len(comments) > 1:
+                    tweet["comments"] = comments[1:]
+                    tweet["replies"] = len(comments)-1

@@ -7,19 +7,26 @@ if __name__ == "__main__":
     # total arguments
     if (len(sys.argv) < 2):
         print("No arguments passed")
-        print("Usage: python get_tweets.py <username> <password>")
+        print("Usage: python get_tweets.py <username> <password> <keyword> <num_tweets>")
         exit(0)
 
-    n = len(sys.argv)
-    scraper = Twitter_scraper(sys.argv[1], sys.argv[2])
-    num_tweets = 1
+    username = sys.argv[1]
+    password = sys.argv[2]
 
-    tweets_data = scraper.search('covid', num_tweets)
+    scraper = Twitter_scraper(username, password)
 
+    keyword = sys.argv[3]
+    num_tweets = int(sys.argv[4])
+
+    print("Getting tweets...")
+    tweets_data = scraper.search(keyword, num_tweets)
+
+    print("Saving tweets...")
     # save the tweets_data.json file
-    with open("database/tweets_data.json", "w") as f:
+    with open("database/data/tweets_data.json", "w") as f:
         json.dump(tweets_data, f, indent=4)
 
+    print("Done!")
     scraper.close()
 
     
