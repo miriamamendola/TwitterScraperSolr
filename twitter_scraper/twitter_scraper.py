@@ -50,7 +50,7 @@ class Twitter_scraper(Scraper):
         super().__init__()
         self.username = username
         self.password = password
-        self.driver_wait_time = 1
+        self.driver_wait_time = 2
         self.scroll_wait_time = 1
         self.scroll_iterations = 1
         self.max_comments = 100
@@ -184,11 +184,26 @@ class Twitter_scraper(Scraper):
             self.get_comments(tweets)
         return tweets
     
+    def search_for_trend(self, trend, num_tweets):
+        
+        trend = trend.replace('#', '%23')
+        self.get_page("https://twitter.com/search?q={}&src=trend_click&vertical=trends".format(trend))
+        tweets = self.get_tweets(num_tweets)
+        if self.comments:
+            self.get_comments(tweets)
+        return tweets
+    
     def get_trends(self):
         
         trends_data = []
 
         body = self.driver.find_element(By.TAG_NAME, "body")
+
+        # aria-label="Timeline: Trending now"
+        timeline = body.find_element(By.CSS_SELECTOR, '[aria-label="Timeline: Trending now"]')
+        # take the div with role heading
+        heading = timeline.find_element(By.CSS_SELECTOR, '[role="heading"]')
+        location = heading.text.split(" ")[0].strip()
 
         try:
             list = body.find_elements(By.CSS_SELECTOR, '[data-testid="trend"]')
@@ -197,21 +212,32 @@ class Twitter_scraper(Scraper):
 
         for elem in list:
             # take the first div into the list
-            div = elem.find_elements(By.TAG_NAME, 'div')[0]
-            # take the text into the second div
-            text = div.find_elements(By.TAG_NAME, 'div')[4].text
-            # take the number of posts into the third div
-            number_of_posts = super()._convert_to_int(div.find_elements(By.TAG_NAME, 'div')[5].text.split(' ')[0])
+            div = elem.find_element(By.TAG_NAME, 'div')
+            # take the sibling of the first child of div
+            div = elem.find_element(By.TAG_NAME, 'div')
+            div = div.find_element(By.TAG_NAME, 'div')
+            siblings = div.find_elements(By.XPATH, "./following-sibling::*")
+            text = siblings[0].text
+            posts = siblings[1].text
+            # take the number of posts into the second sibling of the first child of div
+            try:
+                number_of_posts = super()._convert_to_int(posts.split(" ")[0])
+            except:
+                number_of_posts = 0
             # take the url of the post, search the a tag and take the href attribute containinh the 'hashtag' string
             trend_name = text.replace('#', '%23')
             url = "https://twitter.com/search?q={}&src=trend_click&vertical=trends".format(trend_name)
 
             if number_of_posts > 0:
-                trends_data.append({"trending_topic": text, "number_of_posts": number_of_posts, "date":  datetime.datetime.now(tz=datetime.timezone.utc), "url": url})
+                trends_data.append({"name": text, "number_of_posts": number_of_posts, "date":  datetime.datetime.now().isoformat(), "url": url, "location": location})
             else:
-                trends_data.append({"trending_topic": text, "date": datetime.datetime.now(tz=datetime.timezone.utc), "url": url})
+                trends_data.append({"name": text, "date": datetime.datetime.now().isoformat(), "url": url, "location": location})
 
         return trends_data
+    
+    def search_trends(self):
+        self.get_page("https://twitter.com/home", 2)
+        return self.get_trends()
     
     def get_user(self):
         
@@ -220,7 +246,7 @@ class Twitter_scraper(Scraper):
         try:
             username_div = self.driver.find_element(By.CSS_SELECTOR, '[data-testid="UserName"]')
         except:
-            return
+            raise Exception("Error: user not found")
         
         spans = username_div.find_elements(By.TAG_NAME, 'span')
         user_data["profile_name"] = spans[1].text
@@ -276,9 +302,18 @@ class Twitter_scraper(Scraper):
             
         return user_data
     
+    def search_user(self, username):
+        self.get_page("https://twitter.com/{}".format(username.replace('@', '')), 2)
+        try:
+            user = self.get_user()
+        except:
+            print("Error: user not found")
+            user = {}
+        return user
+    
     def get_comments(self, tweets):
         
-        print("Getting comments...")
+        print("Getting comments for each tweet...")
         # for each tweet in the list of dicts, take the url and the number of replies
         for tweet in tweets:
 
@@ -305,10 +340,13 @@ class Twitter_scraper(Scraper):
                 self.__append_tweets_data(comments, self.driver)
 
                 i = 0
+                prev_len = 0
+                iters = 0
                 
                 with tqdm(total=min(replies, self.max_comments)) as pbar:
 
-                    while (i < min(replies, self.max_comments)):
+                    while (i < min(replies, self.max_comments) and iters < 10):
+
                         try:
                             elem = self.driver.find_element(By.TAG_NAME, "body")
                         except:
@@ -340,8 +378,14 @@ class Twitter_scraper(Scraper):
 
                         self.__append_tweets_data(comments, self.driver)
 
+                        if len(comments) > prev_len:
+                            iters = 0
+                        else:
+                            iters += 1
+
                         pbar.update(len(comments)-i)  # Update the progress bar by the number of comments
                         i = len(comments)
+                        prev_len  = len(comments)
 
                 if len(comments) > 1:
                     tweet["comments"] = comments[1:]

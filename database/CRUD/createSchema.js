@@ -8,53 +8,31 @@ db.dropDatabase()
 
 // create the collections
 
-// create collection 'Trends'
-db.createCollection('Trends', {
-    validator: {
-        $jsonSchema: {
-            bsonType: "object",
-            required: ["_id", "trending_topic", "date", "location"],
-            properties: {
-                trending_topic : {
-                    bsonType: "string",
-                    description: "Name of the trending topic. Required.",
-                },
-                location : {
-                    bsonType: "string",
-                    description: "Location of the trending topic. Required.",
-                },
-                date : {
-                    bsonType: "date",
-                    description: "Date of the trending topic. Required.",
-                }
-            }
-        }
-    }
-})
-print("Trends' schema created.")
-
 // create collection 'Users'
 db.createCollection('Users', {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            required: ["_id", "username", "verified","following", "followers"],
+            title: "Users object validation",
+            required: ["_id", "username", "verified", "following", "followers"],
             properties: {
-                username : {
+                username: {
                     bsonType: "string",
                     description: "Username of the user. Required.",
                 },
-                verified : {
+                verified: {
                     bsonType: "bool",
                     description: "Whether the user is verified or not. Required.",
                 },
-                following : {
+                following: {
                     bsonType: "int",
-                    description: "Number of users the user is following. Required.",
+                    description: "Number of users the user is following. Required. It must be greater than or equal to 0.",
+                    minimum: 0,
                 },
-                followers : {
+                followers: {
                     bsonType: "int",
-                    description: "Number of users following the user. Required.",
+                    description: "Number of users following the user. Required. It must be greater than or equal to 0.",
+                    minimum: 0,
                 }
             }
         }
@@ -62,39 +40,68 @@ db.createCollection('Users', {
 })
 print("Users' schema created.")
 
+// create collection 'Trends'
+db.createCollection('Trends', {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["_id", "url", "name", "location"],
+            properties: {
+                url: {
+                    bsonType: "string",
+                    description: "URL of the trend. Required.",
+                },
+                name: {
+                    bsonType: "string",
+                    description: "Name of the trend. Required.",
+                },
+                location: {
+                    bsonType: "string",
+                    description: "Location of the trend. Required.",
+                }
+            }
+        }
+    }
+})
+
+print("Trends' schema created.")
+
 // create collection 'Tweets'
 db.createCollection('Tweets', {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            required: ["_id", "username", "tweet", "replies", "retweets", "likes", "shares", "sentiment"],
+            required: ["_id", "url", "username", "text", "retweets", "likes", "shares", "sentiment"],
             properties: {
-                username : {
+                url: {
                     bsonType: "string",
-                    description: "Username of the tweet. Required.",
+                    description: "URL of the tweet. Required.",
                 },
-                tweet : {
+                username: {
                     bsonType: "string",
-                    description: "Tweet. Required.",
+                    description: "Username of the user who tweeted. Required.",
                 },
-                replies : {
-                    bsonType: "int",
-                    description: "Number of replies to the tweet. Required.",
-                },
-                retweets : {
-                    bsonType: "int",
-                    description: "Number of retweets of the tweet. Required.",
-                },
-                likes : {
-                    bsonType: "int",
-                    description: "Number of likes of the tweet. Required.",
-                },
-                shares : {
-                    bsonType: "int",
-                    description: "Number of shares of the tweet. Required.",
-                },
-                sentiment : {
+                text: {
                     bsonType: "string",
+                    description: "Text of the tweet. Required.",
+                },
+                retweets: {
+                    bsonType: "int",
+                    description: "Number of retweets. Required. It must be greater than or equal to 0.",
+                    minimum: 0,
+                },
+                likes: {
+                    bsonType: "int",
+                    description: "Number of likes. Required. It must be greater than or equal to 0.",
+                    minimum: 0,
+                },
+                shares: {
+                    bsonType: "int",
+                    description: "Number of shares. Required. It must be greater than or equal to 0.",
+                    minimum: 0,
+                },
+                sentiment: {
+                    bsonType: "double",
                     description: "Sentiment of the tweet. Required.",
                 }
             }
@@ -103,10 +110,10 @@ db.createCollection('Tweets', {
 })
 print("Tweets' schema created.")
 
-// create index for 'Trends' on 'trending_topic' and 'location'
-db.Trends.createIndex({trending_topic: 1, location: 1}, {unique: true})
+// create index for 'Trends' on 'name', 'date', 'location' and rename to name_date_location
+db.Trends.createIndex({ name: 1, date: 1, location: 1 }, {unique : true, name : "name_date_location_index"})
 print("Index created for Trends.")
 
 // create index for 'Users' on 'username'
-db.Users.createIndex({username: 1}, {unique: true})
+db.Users.createIndex({ username: 1 }, {unique : true, name : "username_index"})
 print("Index created for Users.")

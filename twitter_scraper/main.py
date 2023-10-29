@@ -1,84 +1,116 @@
 from twitter_scraper import Twitter_scraper
-from pymongo import MongoClient
 from bson.objectid import ObjectId
 from textblob import TextBlob
-import datetime
+from datetime import datetime
+import json
+import sys
 
 def get_sentiment(text):
     blob = TextBlob(text)
     return blob.sentiment.polarity
 
+def manage_users(users, tweet):
+
+    if tweet["username"] not in users:
+
+        user = scraper.search_user(tweet["username"])
+        user["_id"] = ObjectId()
+        user_id = user["_id"]
+        users[tweet["username"]] = user
+    
+    else:
+
+        user_id = users[tweet["username"]]["_id"]
+        user = users[tweet["username"]]
+
+    tweet["user_id"] = user_id
+
+    if "tweets" not in user:
+        user["tweets"] = [tweet["_id"]]
+    else:
+        user["tweets"].append(tweet["_id"])
+
+    # recursively get all the comments
+    if "comments" in tweet:
+
+        for comment in tweet["comments"]:
+
+            comment["_id"] = ObjectId()
+            comment["sentiment"] = get_sentiment(comment["text"])
+
+            manage_users(users, comment)
+
+
 if __name__ == "__main__":
 
-    client = MongoClient()
-    db = client["Twitter"]
+    # total arguments
+    if (len(sys.argv) < 2):
+        print("No arguments passed")
+        print("Usage: python main.py <username> <password>")
+        exit(0)
 
-    scraper = Twitter_scraper()
+    username = sys.argv[1]
+    password = sys.argv[2]
 
-    login_time = 30
-    scraper.get_page("https://twitter.com", login_time)
+    users = {}
 
-    num_scrolls = 60
-    scroll_iterations = 10
-    driver_wait_time = 1
-    scroll_wait_time = 1
+    scraper = Twitter_scraper(username, password)
+    scraper.set_max_comments(20)
 
-    trends_collection = db["Trends"]
-    #trends_data = scraper.get_trends()
-    trends_data = [{"trending_topic": "covid", "url": "https://twitter.com/search?q=%23covid&src=trend_click&vertical=trends", "date": datetime.datetime.now(), "number_of_posts": 1000, "location": "Worldwide"}]
-    trends_collection.insert_many(trends_data)
+    # get all the current trends
+    trends = scraper.search_trends()
 
-    tweets_collection = db["Tweets"]
-    tweets_data = []
+    # get all the tweets for each trend
+    for trend in trends:
 
-    usernames_collection = db["Users"]
-    usernames = set()
+        trend["_id"] = ObjectId()
 
-    for trend in trends_data:
-        print("Getting tweets for {}...".format(trend["trending_topic"]))
-        scraper.get_page(trend["url"], driver_wait_time)
-        tweets_data = scraper.get_tweets(num_scrolls, scroll_iterations, driver_wait_time, scroll_wait_time)
-        print("Getting comments...")
-        scraper.get_comments(tweets_data, scroll_wait_time, driver_wait_time)
-        # add the trend field to each tweet containing the ObjectId of the trend
-        for tweet in tweets_data:
-            tweet["trend_id"] = trend["_id"]
-            # add the username to the set of usernames if it is not already in the set
-            if tweet["username"] not in usernames:
-                usernames.add(tweet["username"])
-                # find the user by username, removing the @ symbol
-                scraper.get_page("https://twitter.com/{}".format(tweet["username"].replace("@","")), driver_wait_time)
-                user = scraper.get_user()
-                # insert the user into the usernames collection
-                if type(user) == dict:
-                    usernames_collection.insert_one(user)
-                    tweet["user_id"] = user["_id"]
-                # repeat the process for the writers of the comments
-                if "comments" in tweet:
-                    for comment in tweet["comments"]:
-                        if comment["username"] not in usernames:
-                            usernames.add(comment["username"])
-                            scraper.get_page("https://twitter.com/{}".format(comment["username"].replace("@","")), driver_wait_time)
-                            user = scraper.get_user()
-                            if type(user) == dict:
-                                usernames_collection.insert_one(user)
-                                comment["user_id"] = user["_id"]
-                        else: 
-                            user = usernames_collection.find_one({"username": comment["username"]})
-                            comment["user_id"] = user["_id"]
-                        # insert the comment into the tweets array of the user
-                        comment["_id"] = ObjectId()
-                        usernames_collection.update_one({"_id": user["_id"]}, {"$push": {"tweets": comment["_id"]}})
-            else: 
-                user = usernames_collection.find_one({"username": tweet["username"]})
-                tweet["user_id"] = user["_id"]
-            # insert the tweet into the tweets array of the user
-            # create object ids for the tweets 
+        # search all the tweets for that trend
+        trend_name = trend["name"]
+        print("Getting tweets for {}...".format(trend_name))
+        tweets = scraper.search_for_trend(trend_name, 5)
+
+        for tweet in tweets:
+
             tweet["_id"] = ObjectId()
-            usernames_collection.update_one({"_id": user["_id"]}, {"$push": {"tweets": tweet["_id"]}})
-            # insert the sentiment of the tweet
-            tweet["sentiment"] = get_sentiment(tweet["tweet"])
-        tweets_collection.insert_many(tweets_data)
-        tweets_data = []
 
+            # check if tweet has the trends array
+            if "trends" not in tweet:
+                tweet["trends"] = [trend["_id"]]
+            else:
+                tweet["trends"].append(trend["_id"])
+
+            # check if the trend has the tweets array
+            if "tweets" not in trend:
+                trend["tweets"] = [tweet["_id"]]
+            else:
+                trend["tweets"].append(tweet["_id"])
+
+            # get the sentiment of the tweet
+            tweet["sentiment"] = get_sentiment(tweet["text"])
+
+            # get the user of the tweet
+            print("Getting users...")
+            manage_users(users, tweet)
+
+        break
+
+    date = datetime.now()
+
+    print("Saving trends...")
+    # save the trends.json file with all the ObjectId's converted to strings defining a default function
+    with open("database/data/trends_{}.json".format(date), "w") as f:
+        json.dump(trends, f, indent=4, default=str)
+
+    print("Saving users...")
+    # save the users.json file
+    with open("database/data/users_{}.json".format(date), "w") as f:
+        json.dump(list(users.values()), f, indent=4, default=str)
+
+    print("Saving tweets...")
+    # save the tweets.json file
+    with open("database/data/tweets_{}.json".format(date), "w") as f:
+        json.dump(tweets, f, indent=4, default=str)
+    
+    print("Done!")
     scraper.close()
