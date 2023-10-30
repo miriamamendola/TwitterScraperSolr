@@ -3,6 +3,46 @@
     and the verified status
 */
 
-// to make this query more efficient, save the _id of the tweet in the tweets array of each trend
+db = connect("localhost:27017")
+
+db = db.getSiblingDB('Twitter')
+
+db.getCollection('Trends').aggregate(
+    [
+        {
+            '$match': {
+                'text': {
+                    '$regex': '#MatthewPerry',
+                    '$options': 'i'
+                }
+            }
+        }, {
+            '$lookup': {
+                'from': 'Users',
+                'localField': 'user_id',
+                'foreignField': '_id',
+                'as': 'usersData'
+            }
+        }, {
+            '$unwind': {
+                'path': '$usersData'
+            }
+        }, {
+            '$group': {
+                '_id': '_id',
+                'totUsers': {
+                    '$sum': 1
+                },
+                'usersReached': {
+                    '$sum': {
+                        '$subtract': [
+                            '$usersData.followers', 1
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+)
 
 

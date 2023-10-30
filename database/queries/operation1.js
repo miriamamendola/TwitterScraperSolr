@@ -3,4 +3,31 @@
     sentiment obtained as the average of the sentiment of the selected tweets.
 */
 
-// to make this query more efficient, save the _id of the tweet in the tweets array of each trend
+db = connect("localhost:27017")
+
+db = db.getSiblingDB('Twitter')
+
+db.getCollection('Trends').aggregate(
+    [
+        { $match: { name: '#matthewperry' } },
+        { $unwind: { path: '$tweets' } },
+        {
+            $lookup: {
+                from: 'Tweets',
+                localField: 'tweets',
+                foreignField: '_id',
+                as: 'tweetsData'
+            }
+        },
+        { $unwind: { path: '$tweetsData' } },
+        {
+            $group: {
+                _id: '$_id',
+                averageSentiment: {
+                    $avg: '$tweetsData.sentiment'
+                }
+            }
+        }
+    ],
+    { maxTimeMS: 60000, allowDiskUse: true }
+);

@@ -7,7 +7,7 @@ class Scraper:
 
     def __init__(self):
 
-        ChromeDriverManager().install()
+        #ChromeDriverManager().install()
         self.driver = webdriver.Chrome()
 
     def get_page(self, url, login_time = 0):

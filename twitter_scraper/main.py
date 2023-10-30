@@ -68,7 +68,7 @@ if __name__ == "__main__":
         # search all the tweets for that trend
         trend_name = trend["name"]
         print("Getting tweets for {}...".format(trend_name))
-        tweets = scraper.search_for_trend(trend_name, 5)
+        tweets = scraper.search_for_trend(trend_name, 100)
 
         for tweet in tweets:
 
@@ -92,8 +92,6 @@ if __name__ == "__main__":
             # get the user of the tweet
             print("Getting users...")
             manage_users(users, tweet)
-
-        break
 
     date = datetime.now()
 
