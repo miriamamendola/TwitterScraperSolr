@@ -4,19 +4,23 @@ db = connect("localhost:27017")
 db = db.getSiblingDB('Twitter')
 
 // trend to insert
+today = new ISODate();
+id = ObjectId().toString().match(/ObjectId\("(.+)"\)/)[1];
+
 const trend = {
-    trending_topic: "AI",
-    date: new Date(),
+    _id: id,
+    name: "AI",
+    date: today.toString(),
     location: "Worldwide",
     url: "https://twitter.com/search?q=AI&src=typed_query"
 }
 
-if (db.Trends.findOne({trending_topic: "AI", location: "Worldwide"}) != null) {
+if (db.Trends.findOne({trending_topic: "AI", location: "Worldwide", date: today}) != null) {
     print("Trend already exists.")
     quit()
 }
 
-// insert trend
+// insert trend/
 db.Trends.insertOne(trend)
 
 // print success message

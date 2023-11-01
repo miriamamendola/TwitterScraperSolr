@@ -3,8 +3,11 @@ db = connect("localhost:27017")
 // connect to pre-existing database Twitter
 db = db.getSiblingDB('Twitter')
 
+id = ObjectId().toString().match(/ObjectId\("(.+)"\)/)[1];
+
 // create a user who published a new tweet related to a trend
 const user = {
+    _id: id,
     profile_name: "John Doe",
     username: "@johndoe",
     verified: false,
