@@ -1,13 +1,17 @@
 /*
-    Given a trend, select all the users that have published tweets that belong to it and for each of them, select the number of followers
-    and the verified status
+    3. TREND DIFFUSION DEGREE
+    Given a certain trend, identify all the users who have published tweets that belong to it and based on their number of 
+    followers identify how many people have been reached by the trend, as the sum of the number of followers (which is 
+    clearly an approximation)
 */
 
 db = connect("localhost:27017")
 
 db = db.getSiblingDB('Twitter')
 
-db.getCollection('Trends').aggregate(
+trendName = "#MatthewPerry"
+
+result = db.getCollection('Tweets').aggregate(
     [
         {
             '$match': {
@@ -44,5 +48,8 @@ db.getCollection('Trends').aggregate(
         }
     ]
 )
+
+printjson(result.toArray())
+
 
 
