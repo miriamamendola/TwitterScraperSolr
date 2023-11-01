@@ -55,7 +55,7 @@ if __name__ == "__main__":
     users = {}
 
     scraper = Twitter_scraper(username, password)
-    scraper.set_max_comments(20)
+    scraper.set_max_comments(5)
 
     # get all the current trends
     trends = scraper.search_trends()
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         # search all the tweets for that trend
         trend_name = trend["name"]
         print("Getting tweets for {}...".format(trend_name))
-        tweets = scraper.search_for_trend(trend_name, 100)
+        tweets = scraper.search_for_trend(trend_name, 10)
 
         for tweet in tweets:
 
@@ -93,22 +93,22 @@ if __name__ == "__main__":
             print("Getting users...")
             manage_users(users, tweet)
 
+        print("Saving tweets...")
+        # save the tweets for the trend in a json file
+        with open("database/data/tweets/tweets_{}_{}.json".format(trend_name, datetime.now().isoformat()), "w") as f:
+            json.dump(tweets, f, indent=4, default=str)
+
+        print("Saving users...")
+        # save the users for the trend in a json file
+        with open("database/data/users/users_{}_{}.json".format(trend_name, datetime.now().isoformat()), "w") as f:
+            json.dump(list(users.values()), f, indent=4, default=str)
+
     date = datetime.now()
 
     print("Saving trends...")
     # save the trends.json file with all the ObjectId's converted to strings defining a default function
-    with open("database/data/trends_{}.json".format(date), "w") as f:
+    with open("database/data/trends/trends_{}.json".format(date), "w") as f:
         json.dump(trends, f, indent=4, default=str)
-
-    print("Saving users...")
-    # save the users.json file
-    with open("database/data/users_{}.json".format(date), "w") as f:
-        json.dump(list(users.values()), f, indent=4, default=str)
-
-    print("Saving tweets...")
-    # save the tweets.json file
-    with open("database/data/tweets_{}.json".format(date), "w") as f:
-        json.dump(tweets, f, indent=4, default=str)
     
     print("Done!")
     scraper.close()
