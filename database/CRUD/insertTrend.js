@@ -4,7 +4,7 @@ db = connect("localhost:27017")
 db = db.getSiblingDB('Twitter')
 
 // trend to insert
-today = new ISODate();
+today = new Date().toString();
 id = ObjectId().toString().match(/ObjectId\("(.+)"\)/)[1];
 
 const trend = {
