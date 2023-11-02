@@ -98,12 +98,12 @@ if __name__ == "__main__":
         with open("database/data/tweets/tweets_{}_{}.json".format(trend_name, datetime.now().isoformat()), "w") as f:
             json.dump(tweets, f, indent=4, default=str)
 
-        print("Saving users until now...")
-        # save the users for the trend in a json file
-        with open("database/data/users/users_{}_{}.json".format(trend_name, datetime.now().isoformat()), "w") as f:
-            json.dump(list(users.values()), f, indent=4, default=str)
-
     date = datetime.now()
+
+    print("Saving users...")
+    # save the users for the trend in a json file
+    with open("database/data/users/users_{}.json".format(date), "w") as f:
+        json.dump(list(users.values()), f, indent=4, default=str)
 
     print("Saving trends...")
     # save the trends.json file with all the ObjectId's converted to strings defining a default function
