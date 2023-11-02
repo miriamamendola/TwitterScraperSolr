@@ -10,7 +10,7 @@ id = ObjectId().toString().match(/ObjectId\("(.+)"\)/)[1];
 const trend = {
     _id: id,
     name: "AI",
-    date: today.toString(),
+    date: today,
     location: "Worldwide",
     url: "https://twitter.com/search?q=AI&src=typed_query"
 }

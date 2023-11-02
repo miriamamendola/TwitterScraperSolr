@@ -4,8 +4,7 @@ db = connect("localhost:27017")
 db = db.getSiblingDB('Twitter')
 
 // get the _id of the trend Covid-19 Worldwide (which was inserted in insertTrend.js)
-dateToSearch = "Wed Nov 01 2023 23:51:59 GMT+0100 (Central European Standard Time)"
-const trend = db.Trends.findOne({name: "AI", location: "Worldwide", date: dateToSearch})
+const trend = db.Trends.findOne({name: "AI", location: "Worldwide"})
 
 if (trend == null) {
     print("Trend doesn't exist.")
@@ -45,13 +44,13 @@ db.Tweets.insertOne(tweet)
 // insert tweet id in the user's tweets array
 db.Users.updateOne(
     { _id: user_id },
-    { $push: { tweets: _id.toString().match(/ObjectId\("(.+)"\)/)[1] } }
+    { $push: { tweets: id} }
 )
 
 // insert tweet id in the trend's tweets array
 db.Trends.updateOne(
     { _id: trend_id },
-    { $push: { tweets: _id.toString().match(/ObjectId\("(.+)"\)/)[1] } }
+    { $push: { tweets: id} }
 )
 
 print("Tweet inserted successfully.")
