@@ -1,6 +1,6 @@
 /* 
     2. SENTIMENT PERCENTAGES
-    For each today's trend, select all the tweets that belong to it and for each value of sentiment that the tweet can assume,
+    For each trend, select all the tweets that belong to it and for each value of sentiment that the tweet can assume,
     print the percentage of them that obtained that particular sentiment.
  */
 
@@ -8,13 +8,7 @@ db = connect("localhost:27017")
 
 db = db.getSiblingDB('Twitter')
 
-// iterate over all the trends inserted today
-trends = db.getCollection('Trends').find({
-    date: {
-        $gte: new Date(new Date().setHours(0o0, 0o0, 0o0)),
-        $lt: new Date(new Date().setHours(23, 59, 59))
-    }
-});
+trends = db.getCollection('Trends').find({});
 
 trends.forEach(function (trend) {
     result = db.getCollection('Trends').aggregate(
@@ -26,48 +20,48 @@ trends.forEach(function (trend) {
                     date: trend.date
                 }
             }, {
-                '$unwind': {
-                    'path': '$tweets'
+                $unwind: {
+                    path: '$tweets'
                 }
             }, {
-                '$lookup': {
-                    'from': 'Tweets',
-                    'localField': 'tweets',
-                    'foreignField': '_id',
-                    'as': 'tweetsData'
+                $lookup: {
+                    from: 'Tweets',
+                    localField: 'tweets',
+                    foreignField: '_id',
+                    as: 'tweetsData'
                 }
             }, {
-                '$unwind': {
-                    'path': '$tweetsData'
+                $unwind: {
+                    path: '$tweetsData'
                 }
             }, {
-                '$group': {
-                    '_id': '$_id',
-                    'totalTweets': {
-                        '$sum': 1
+                $group: {
+                    _id: '$_id',
+                    totalTweets: {
+                        $sum: 1
                     },
-                    'positiveTweets': {
-                        '$sum': {
-                            '$cond': [
+                    positiveTweets: {
+                        $sum: {
+                            $cond: [
                                 {
-                                    '$gt': [
+                                    $gt: [
                                         '$tweetsData.sentiment', 0.2
                                     ]
                                 }, 1, 0
                             ]
                         }
                     },
-                    'neutralTweets': {
-                        '$sum': {
-                            '$cond': [
+                    neutralTweets: {
+                        $sum: {
+                            $cond: [
                                 {
-                                    '$and': [
+                                    $and: [
                                         {
-                                            '$gte': [
+                                            $gte: [
                                                 '$tweetsData.sentiment', -0.2
                                             ]
                                         }, {
-                                            '$lte': [
+                                            $lte: [
                                                 '$tweetsData.sentiment', 0.2
                                             ]
                                         }
@@ -76,11 +70,11 @@ trends.forEach(function (trend) {
                             ]
                         }
                     },
-                    'negativeTweets': {
-                        '$sum': {
-                            '$cond': [
+                    negativeTweets: {
+                        $sum: {
+                            $cond: [
                                 {
-                                    '$lt': [
+                                    $lt: [
                                         '$tweetsData.sentiment', -0.2
                                     ]
                                 }, 1, 0
@@ -89,30 +83,30 @@ trends.forEach(function (trend) {
                     }
                 }
             }, {
-                '$project': {
-                    'totalTweets': 1,
-                    'positivePercentage': {
-                        '$multiply': [
+                $project: {
+                    totalTweets: 1,
+                    positivePercentage: {
+                        $multiply: [
                             {
-                                '$divide': [
+                                $divide: [
                                     '$positiveTweets', '$totalTweets'
                                 ]
                             }, 100
                         ]
                     },
-                    'neutralPercentage': {
-                        '$multiply': [
+                    neutralPercentage: {
+                        $multiply: [
                             {
-                                '$divide': [
+                                $divide: [
                                     '$neutralTweets', '$totalTweets'
                                 ]
                             }, 100
                         ]
                     },
-                    'negativePercentage': {
-                        '$multiply': [
+                    negativePercentage: {
+                        $multiply: [
                             {
-                                '$divide': [
+                                $divide: [
                                     '$negativeTweets', '$totalTweets'
                                 ]
                             }, 100

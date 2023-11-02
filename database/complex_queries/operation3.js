@@ -9,37 +9,34 @@ db = connect("localhost:27017")
 
 db = db.getSiblingDB('Twitter')
 
-trendName = "#MatthewPerry"
+trendName = "#Halloween"
 
 result = db.getCollection('Tweets').aggregate(
     [
         {
-            '$match': {
-                'text': {
-                    '$regex': '#MatthewPerry',
-                    '$options': 'i'
+            $match: {
+                text: {
+                    $regex: '#Halloween',
+                    $options: 'i'
                 }
             }
         }, {
-            '$lookup': {
-                'from': 'Users',
-                'localField': 'user_id',
-                'foreignField': '_id',
-                'as': 'usersData'
+            $lookup: {
+                from: 'Users',
+                localField: 'user_id',
+                foreignField: '_id',
+                as: 'usersData'
             }
         }, {
-            '$unwind': {
-                'path': '$usersData'
+            $unwind: {
+                path: '$usersData'
             }
         }, {
-            '$group': {
-                '_id': '_id',
-                'totUsers': {
-                    '$sum': 1
-                },
-                'usersReached': {
-                    '$sum': {
-                        '$subtract': [
+            $group: {
+                _id: '$_id',
+                usersReached: {
+                    $sum: {
+                        $subtract: [
                             '$usersData.followers', 1
                         ]
                     }
