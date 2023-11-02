@@ -1,16 +1,46 @@
 db = connect("localhost:27017")
 
-// connect to pre-existing database Twitter
 db = db.getSiblingDB('Twitter')
 
-// delete all the tweets wrote by the user with username @johndoe
-db.Tweets.deleteMany(
-    { username: "@johndoe" }
-)
+user = db.Users.findOne({ username: "@johndoe" })
 
-// delete the user
+if (user == null) {
+
+    print("User doesn't exist.")
+    
+} else {
+
+    if (user.tweets == null) {
+
+        print("User doesn't have any tweets.")
+
+    } else {
+
+        user.tweets.forEach(tweet_id => {
+
+            tweets = db.Tweets.find({ _id: tweet_id })
+
+            tweets.forEach(tweet => {
+
+                tweet.trends.forEach(trend_id => {
+                    db.Trends.updateOne(
+                        { _id: trend_id },
+                        { $pull: { tweets: tweet._id } }
+                    )
+                })
+
+                db.Tweets.deleteOne(
+                    { _id: tweet._id }
+                )
+            })
+
+        })
+    }
+
+}
+
 db.Users.deleteOne(
-    { username: "@johndoe" }
+    { username: user.username }
 )
 
 print("User deleted successfully.")

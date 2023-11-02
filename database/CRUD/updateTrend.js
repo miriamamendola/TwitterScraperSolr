@@ -1,20 +1,20 @@
 db = connect("localhost:27017")
 
-// connect to pre-existing database Twitter
 db = db.getSiblingDB('Twitter')
 
-// get the _id of the trend Covid-19 Worldwide (which was inserted in insertTrend.js)
-const trend_id = db.Trends.findOne({trending_topic: "AI", location: "Worldwide"})._id
+const trend = db.Trends.findOne({_id: "6543cb8f825f3a0c441ce76c"})
 
-if (trend_id == null) {
+if (trend == null) {
+
     print("Trend doesn't exist.")
-    quit()
+
+} else {
+
+    db.Trends.updateOne(
+        { _id: trend._id },
+        { $set: { date: new Date() } }
+    )
+
+    print("Trend updated successfully.")
+
 }
-
-// update the trend date to the current date
-db.Trends.updateOne(
-    { _id: trend_id },
-    { $set: { date: new Date() } }
-)
-
-print("Trend updated successfully.")

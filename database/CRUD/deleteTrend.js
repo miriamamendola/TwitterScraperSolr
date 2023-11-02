@@ -1,23 +1,44 @@
 db = connect("localhost:27017")
 
-// connect to pre-existing database Twitter
 db = db.getSiblingDB('Twitter')
 
-// find all the tweets related to the trend AI Worldwide
-tweets = db.Tweets.find({trend_id: db.Trends.find({trending_topic: "AI", location: "Worldwide"})._id})
-// for each tweet, get the ObjectId of the user who wrote it and find the user, then remove from the user's tweets array the ObjectId of the tweet
-for (let i = 0; i < tweets.length; i++) {
-    user_id = tweets[i].user_id
-    db.Users.updateOne(
-        { _id: user_id },
-        { $pull: { tweets: tweets[i]._id } }
-    )
+id = "6543cb8f825f3a0c441ce76c"
+
+trend = db.Trends.findOne({ _id: id })
+
+if (trend == null) {
+
+    print("Trend doesn't exist.")
+
+} else {
+
+    if (trend.tweets == null) {
+
+        print("Trend doesn't have any tweets.")
+
+    } else {
+
+        trend.tweets.forEach(tweet_id => {
+
+            tweets = db.Tweets.find({ _id: tweet_id })
+
+            tweets.forEach(tweet => {
+                db.Users.updateOne(
+                    { _id: tweet.user_id },
+                    { $pull: { tweets: tweet._id } }
+                )
+            })
+
+            db.Tweets.deleteOne(
+                { _id: tweet_id }
+            )
+
+        })
+
+    }
+
+    db.Trends.deleteOne({ _id: id })
+
+    print("Trend deleted successfully.")
+
 }
-// delete all the tweets related to the trend AI Worldwide
-db.Tweets.deleteMany({trend_id: db.Trends.findOne({trending_topic: "AI", location: "Worldwide"})._id})
-
-// delete the trend AI Worldwide
-db.Trends.deleteOne({trending_topic: "AI", location: "Worldwide"})
-
-print("Trend deleted successfully.")
-
