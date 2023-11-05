@@ -18,7 +18,7 @@ db.Trends.find({}).forEach(function (trend) {
 
                 toPrint.comments.forEach(function (comment) {
 
-                    print("\t\tComment: " + comment + "\n")
+                    print("\t\tComment: " + comment.text + "\n")
 
                 })
             }

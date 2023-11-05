@@ -15,26 +15,6 @@ db.Users.find({}).forEach(function (user) {
 
             print("\tTweet: " + toPrint.text + "\n")
 
-            if (toPrint.comments != null) {
-
-                toPrint.comments.forEach(function (comment) {
-
-                    print("\t\tComment: " + comment.text + "\n")
-
-                })
-
-            }   
-
-            print("]\n")
-
-        }
-
-        comment = db.Tweets.findOne({ "comments._id": tweet });
-
-        if (comment != null) {
-
-            print("\t\tComment: " + comment.text + "\n")
-
         }
 
     })
