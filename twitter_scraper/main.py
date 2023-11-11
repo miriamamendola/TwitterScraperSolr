@@ -40,17 +40,7 @@ def manage_users(users, tweet):
 
             manage_users(users, comment)
 
-
-if __name__ == "__main__":
-
-    # total arguments
-    if (len(sys.argv) < 2):
-        print("No arguments passed")
-        print("Usage: python main.py <username> <password>")
-        exit(0)
-
-    username = sys.argv[1]
-    password = sys.argv[2]
+def main(username, password):
 
     users = {}
 
@@ -112,3 +102,16 @@ if __name__ == "__main__":
     
     print("Done!")
     scraper.close()
+    
+if __name__ == "__main__":
+    # total arguments
+    if (len(sys.argv) < 2):
+        print("No arguments passed")
+        print("Usage: python main.py <username> <password>")
+        exit(0)
+
+    username = sys.argv[1]
+    password = sys.argv[2]
+
+    main(username, password)
+   
