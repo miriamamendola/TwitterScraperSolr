@@ -1,4 +1,4 @@
-from twitter_scraper import Twitter_scraper
+from .twitter_scraper import Twitter_scraper
 import json
 import sys
 
@@ -20,5 +20,3 @@ if __name__ == "__main__":
     print(user)
 
     scraper.close()
-
-    
